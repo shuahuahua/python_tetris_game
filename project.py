@@ -2,7 +2,7 @@ import pygame
 import sys
 import random
 
-# Game Constants
+# Constants
 WINDOW_WIDTH = 300
 WINDOW_HEIGHT = 600
 BACKGROUND_COLOR = (0, 0, 0)
@@ -12,7 +12,7 @@ GRID_WIDTH = 10
 GRID_HEIGHT = 20
 CELL_SIZE = 30
 
-# Tetromino shapes and their properties
+# Tetromino Shapes
 TETROMINOES = {
     "I": [(0, 1), (1, 1), (2, 1), (3, 1)],
     "O": [(0, 0), (0, 1), (1, 0), (1, 1)],
@@ -23,6 +23,7 @@ TETROMINOES = {
     "L": [(0, 1), (1, 1), (2, 1), (2, 2)]
 }
 
+# Tetromino Colors
 TETROMINO_COLORS = {
     "I": (0, 255, 255),
     "O": (255, 255, 0),
@@ -33,48 +34,61 @@ TETROMINO_COLORS = {
     "L": (255, 165, 0)
 }
 
-# Create the grid
+def draw_tetromino(screen, tetromino, position, color):
+    x, y = position
+    for px, py in tetromino.blocks:
+        pygame.draw.rect(screen, color, ((x + px) * CELL_SIZE, (y + py) * CELL_SIZE, CELL_SIZE, CELL_SIZE))
+
 def initialize_grid():
     return [[(0, 0, 0) for _ in range(GRID_WIDTH)] for _ in range(GRID_HEIGHT)]
 
-# Draw the grid on the screen
 def draw_grid(screen, grid):
     for y in range(GRID_HEIGHT):
         for x in range(GRID_WIDTH):
             pygame.draw.rect(screen, grid[y][x], (x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE))
             pygame.draw.rect(screen, GRID_COLOR, (x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE), 1)
 
-# Place Tetromino on the grid
-def place_tetromino_on_grid(grid, tetromino):
-    for px, py in tetromino.blocks:
-        if 0 <= py < GRID_HEIGHT and 0 <= px < GRID_WIDTH:
-            grid[tetromino.y + py][tetromino.x + px] = tetromino.color
-
-# Check for collisions with the grid boundaries and other Tetrominoes
-def check_collision(grid, tetromino, dx, dy):
-    for px, py in tetromino.blocks:
-        new_x = tetromino.x + px + dx
-        new_y = tetromino.y + py + dy
-        if new_x < 0 or new_x >= GRID_WIDTH or new_y < 0 or new_y >= GRID_HEIGHT or grid[new_y][new_x] != (0, 0, 0):
-            return True
-    return False
-
-# Tetromino class to manage individual shapes
 class Tetromino:
-    def __init__(self):
-        self.shape = random.choice(list(TETROMINOES.keys()))
-        self.color = TETROMINO_COLORS[self.shape]
-        self.blocks = TETROMINOES[self.shape]
+    def __init__(self, shape):
+        self.shape = shape
+        self.color = TETROMINO_COLORS[shape]
+        self.blocks = TETROMINOES[shape]
         self.x = 5
         self.y = 0
 
     def draw(self, screen):
-        for px, py in self.blocks:
+        for block in self.blocks:
             pygame.draw.rect(
                 screen,
                 self.color,
-                ((self.x + px) * CELL_SIZE, (self.y + py) * CELL_SIZE, CELL_SIZE, CELL_SIZE)
+                ((self.x + block[0]) * CELL_SIZE, (self.y + block[1]) * CELL_SIZE, CELL_SIZE, CELL_SIZE)
             )
+
+    def rotate(self, grid):
+        new_blocks = [(py, -px) for px, py in self.blocks]
+        for px, py in new_blocks:
+            if not (0 <= self.x + px < GRID_WIDTH and 0 <= self.y + py < GRID_HEIGHT) or grid[self.y + py][self.x + px] != (0, 0, 0):
+                return
+        self.blocks = new_blocks
+
+def check_collision(grid, tetromino):
+    for px, py in tetromino.blocks:
+        if not (0 <= tetromino.x + px < GRID_WIDTH and 0 <= tetromino.y + py < GRID_HEIGHT) or grid[tetromino.y + py][tetromino.x + px] != (0, 0, 0):
+            return True
+    return False
+
+def place_tetromino(grid, tetromino):
+    for px, py in tetromino.blocks:
+        grid[tetromino.y + py][tetromino.x + px] = tetromino.color
+
+def clear_lines(grid):
+    lines_cleared = 0
+    for y in range(GRID_HEIGHT - 1, -1, -1):
+        if all(grid[y][x] != (0, 0, 0) for x in range(GRID_WIDTH)):
+            del grid[y]
+            grid.insert(0, [(0, 0, 0) for _ in range(GRID_WIDTH)])
+            lines_cleared += 1
+    return lines_cleared
 
 def main():
     pygame.init()
@@ -85,45 +99,61 @@ def main():
     clock = pygame.time.Clock()
 
     grid = initialize_grid()
+    score = 0
+    font = pygame.font.Font(None, 36)
 
-    # Create a new random Tetromino
-    tetromino = Tetromino()
-
-    last_fall_time = pygame.time.get_ticks()
-    fall_speed = 500  # Milliseconds
+    tetromino = Tetromino(random.choice(list(TETROMINOES.keys())))
 
     running = True
-    while running:
-        current_time = pygame.time.get_ticks()
+    drop_time = 0
+    drop_speed = 500  # Milliseconds
 
+    while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
                 break
             elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_LEFT and not check_collision(grid, tetromino, -1, 0):
-                    tetromino.x -= 1
-                elif event.key == pygame.K_RIGHT and not check_collision(grid, tetromino, 1, 0):
-                    tetromino.x += 1
-                elif event.key == pygame.K_DOWN and not check_collision(grid, tetromino, 0, 1):
+                if event.key == pygame.K_LEFT:
+                    if tetromino.x > 0:  # Check for left boundary
+                        tetromino.x -= 1
+                elif event.key == pygame.K_RIGHT:
+                    if tetromino.x < GRID_WIDTH - 1:  # Check for right boundary
+                        tetromino.x += 1
+                elif event.key == pygame.K_DOWN:
                     tetromino.y += 1
+                elif event.key == pygame.K_UP:
+                    tetromino.rotate(grid)
+                elif event.key == pygame.K_SPACE:
+                    while not check_collision(grid, tetromino):
+                        tetromino.y += 1
+                    tetromino.y -= 1
 
-        if current_time - last_fall_time > fall_speed:
-            if not check_collision(grid, tetromino, 0, 1):
-                tetromino.y += 1
-            else:
-                place_tetromino_on_grid(grid, tetromino)
-                tetromino = Tetromino()  # Create a new random Tetromino
+        drop_time += clock.get_rawtime()
+        if drop_time > drop_speed:
+            tetromino.y += 1
+            drop_time = 0
 
-            last_fall_time = current_time
+        if check_collision(grid, tetromino):
+            tetromino.y -= 1
+            place_tetromino(grid, tetromino)
+            lines_cleared = clear_lines(grid)
+            score += lines_cleared
+
+            tetromino = Tetromino(random.choice(list(TETROMINOES.keys())))
+            if check_collision(grid, tetromino):
+                print(f"Game Over! Final Score: {score}")
+                pygame.quit()
+                sys.exit()
 
         screen.fill(BACKGROUND_COLOR)
-
         draw_grid(screen, grid)
         tetromino.draw(screen)
 
-        pygame.display.flip()
+        score_text = font.render(f'Score: {score}', True, (255, 255, 255))
+        screen.blit(score_text, (10, 10))
 
+        pygame.display.flip()
         clock.tick(FPS)
 
     pygame.quit()
