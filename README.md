@@ -1,5 +1,5 @@
 # Tetris Game with Python
-https://youtu.be/gSBuXM6sESo
+Video Demo: https://youtu.be/gSBuXM6sESo
 
 ## Table of Contents
 - [Introduction](#introduction)
@@ -9,7 +9,6 @@ https://youtu.be/gSBuXM6sESo
 - [Usage](#usage)
 - [File Overview](#file-overview)
 - [Future Improvements](#future-improvements)
-- [License](#license)
 
 ---
 
@@ -95,10 +94,3 @@ While the game is functional, there are several features and enhancements that c
 6. **Settings Menu**: Add options for customizing controls, grid size, and game speed.
 
 ---
-
-## License
-This project is licensed under the MIT License. Feel free to use, modify, and distribute the code as you see fit.
-
----
-
-With this README, your project will look polished and professional on GitHub. Let me know if there are any specific sections you’d like to adjust!
