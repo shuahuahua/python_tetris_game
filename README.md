@@ -35,3 +35,4 @@ The game was built with performance and clarity in mind. The `pygame` library wa
 - Adding more advanced scoring and combo mechanics
 - Enhancing graphics and animations
 - Implementing sound effects
+- Bug fixes as well as integration of holding key press

@@ -2,7 +2,7 @@ import pygame
 import sys
 import random
 
-# Constants
+# Game Constants
 WINDOW_WIDTH = 300
 WINDOW_HEIGHT = 600
 BACKGROUND_COLOR = (0, 0, 0)
@@ -106,7 +106,7 @@ def main():
 
     running = True
     drop_time = 0
-    drop_speed = 500  # Milliseconds
+    drop_speed = 50  # Milliseconds
 
     while running:
         for event in pygame.event.get():
@@ -115,11 +115,13 @@ def main():
                 break
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_LEFT:
-                    if tetromino.x > 0:  # Check for left boundary
-                        tetromino.x -= 1
-                elif event.key == pygame.K_RIGHT:
-                    if tetromino.x < GRID_WIDTH - 1:  # Check for right boundary
+                    tetromino.x -= 1
+                    if check_collision(grid, tetromino):
                         tetromino.x += 1
+                elif event.key == pygame.K_RIGHT:
+                    tetromino.x += 1
+                    if check_collision(grid, tetromino):
+                        tetromino.x -= 1
                 elif event.key == pygame.K_DOWN:
                     tetromino.y += 1
                 elif event.key == pygame.K_UP:
